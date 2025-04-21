@@ -1,8 +1,8 @@
-Flask==3.1.0
-opencv-python==4.11.0.86
-mediapipe==0.10.21
-tensorflow==2.19.0
-flask-cors==5.0.1
-numpy==2.2.5
-h5py==3.13.0
-gunicorn==23.0.0
+Flask
+opencv-python
+mediapipe
+tensorflow
+flask-cors
+numpy
+h5py
+gunicorn
