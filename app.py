@@ -39,6 +39,167 @@ initial_frame = np.zeros((480, 640, 3), dtype=np.uint8)
 # HTML Template
 # Backend Modifications (Flask)
 
+HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Language Recognition</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .control-buttons {
+            margin: 2rem 0;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .start-button {
+            background: #00c853;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,200,83,0.4);
+        }
+
+        .stop-button {
+            background: #ff1744;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255,23,68,0.4);
+            display: none;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .video-container {
+            margin: 2rem auto;
+            width: 640px;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+        }
+
+        #videoFeed {
+            width: 100%;
+            height: auto;
+            background: #000;
+        }
+
+        .prediction-box {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-size: 1.5rem;
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sign Language Interpreter</h1>
+        
+        <div class="control-buttons">
+            <button class="button start-button" onclick="startCamera()">
+                <span class="material-icons">play_arrow</span>
+                Start Camera
+            </button>
+            <button class="button stop-button" onclick="stopCamera()">
+                <span class="material-icons">stop</span>
+                Stop Camera
+            </button>
+        </div>
+
+        <div class="video-container" id="videoContainer">
+            <img id="videoFeed" src="">
+            <div class="prediction-box" id="prediction">Ready</div>
+        </div>
+    </div>
+
+    <script>
+        let predictionInterval;
+        const videoContainer = document.getElementById('videoContainer');
+        const startBtn = document.querySelector('.start-button');
+        const stopBtn = document.querySelector('.stop-button');
+
+        function startCamera() {
+            // Toggle buttons
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'flex';
+            videoContainer.style.display = 'block';
+
+            // Initialize video feed
+            const videoFeed = document.getElementById('videoFeed');
+            videoFeed.src = 'http://localhost:5000/video_feed?' + Date.now();
+
+            // Start prediction updates
+            predictionInterval = setInterval(updatePrediction, 500);
+            
+            // Initialize camera in backend
+            fetch('/start_camera');
+        }
+
+        function stopCamera() {
+            // Toggle buttons
+            startBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            videoContainer.style.display = 'none';
+
+            // Stop prediction updates
+            clearInterval(predictionInterval);
+            document.getElementById('prediction').textContent = 'Stopped';
+            
+            // Clear video feed
+            const videoFeed = document.getElementById('videoFeed');
+            videoFeed.src = '';
+            
+            // Stop camera in backend
+            fetch('/stop_camera');
+        }
+
+        function updatePrediction() {
+            fetch('/prediction')
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('prediction').textContent = data || 'No prediction';
+                });
+        }
+    </script>
+</body>
+</html>
+"""
 
 # Add these routes to your Flask app
 @app.route('/start_camera')
@@ -77,7 +238,7 @@ def generate_frames():
 
 @app.route('/')
 def index():
-    return render_template_string(prediction=latest_prediction)
+    return render_template_string(HTML ,  prediction=latest_prediction)
 
 @app.route('/video_feed')
 def video_feed():
